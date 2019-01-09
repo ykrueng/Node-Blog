@@ -24,7 +24,6 @@ const checkUser = async(req, res, next) => {
         message: "user does not exist"
       })
     }
-    // res.status(200).json({ user });
     req.user = user;
     next();
   } catch (err) {
@@ -45,6 +44,18 @@ server.get("/", (req, res) => {
 });
 
 // route handler for GET /api/users
+server.get("/api/users", async(req, res) => {
+  try {
+    const users = await userDb.get();
+    res.status(200).json(users);
+  } catch (err) {
+    res.status(500).json({
+      message: "cannot retrieve users"
+    });
+  }
+})
+
+// route handler for GET /api/users/:id
 server.get("/api/users/:id", checkUser, (req, res) => {
     res.status(200).json(req.user);
 });
