@@ -9,18 +9,7 @@ const postDb = require("../data/helpers/postDb");
 
 const server = express();
 
-// middleware
-server.use(cors());
-server.use(morgan("short"));
-server.use(bodyParser.json());
-server.use(helmet());
-
-server.get("/", (req, res) => {
-  res.send("Welcome to Node-Blog API");
-});
-
-// route handler for GET /api/users
-server.get("/api/users/:id", async (req, res) => {
+const checkUser = async(req, res, next) => {
   const { id } = req.params;
   if (!id) {
     res.status(400).json({
@@ -35,36 +24,41 @@ server.get("/api/users/:id", async (req, res) => {
         message: "user does not exist"
       })
     }
-    res.status(200).json({ user });
+    // res.status(200).json({ user });
+    req.user = user;
+    next();
   } catch (err) {
     res.status(500).json({
       message: "cannot retrieve user info"
     });
   }
+}
+
+// middleware
+server.use(cors());
+server.use(morgan("short"));
+server.use(bodyParser.json());
+server.use(helmet());
+
+server.get("/", (req, res) => {
+  res.send("Welcome to Node-Blog API");
+});
+
+// route handler for GET /api/users
+server.get("/api/users/:id", checkUser, (req, res) => {
+    res.status(200).json(req.user);
 });
 
 // route handler for GET /api/users/:id/post
-server.get("/api/users/:id/posts",
+server.get("/api/users/:id/posts", checkUser,
   async (req, res) => {
     const { id } = req.params;
-    if (!id) {
-      res.status(400).json({
-        message: "please provide an id"
-      });
-    }
-
     try {
-      const user = await userDb.get(id);
-      if (!user) {
-        res.status(404).json({
-          message: "user does not exist"
-        })
-      }
       const posts = await userDb.getUserPosts(id);
       res.status(200).json(posts);
     } catch(err) {
       res.status(500).json({
-        message: "cannot retrieve user posts"
+        message: "cannot retrieve user's posts"
       })
     }
 });
