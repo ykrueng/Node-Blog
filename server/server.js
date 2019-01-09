@@ -78,11 +78,27 @@ server.get("/api/users/:id", checkUser, (req, res) => {
 // route handler for POST /api/users
 server.post("/api/users", checkUsername, async (req, res) => {
   try {
-    const newId = await userDb.insert({name: req.name});
+    const newId = await userDb.insert({ name: req.name });
     res.status(201).json(newId);
   } catch (err) {
     res.status(500).json({
       message: "cannot create new user"
+    })
+  }
+});
+
+// route handler for PUT /api/users/:id
+server.put("/api/users/:id", checkUser, checkUsername, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const count = await userDb.update(id, { name: req.name });
+    if (count === 1) {
+      res.sendStatus(204);
+    }
+    res.status(500).json({ message: "failed to update user's info" });
+  } catch(err) {
+    res.status(500).json({
+      message: "cannot update user's info"
     })
   }
 })
