@@ -15,16 +15,17 @@ const checkUsername = (req, res, next) => {
   if (!name) {
     res.status(400).json({
       message: "please provide a username"
-    })
+    });
   }
 
-  req.name = name.split(' ').map(
-    str => `${str[0].toUpperCase()}${str.slice(1)}`
-  ).join(' ');
+  req.name = name
+    .split(" ")
+    .map(str => `${str[0].toUpperCase()}${str.slice(1)}`)
+    .join(" ");
   next();
-}
+};
 
-const checkUser = async(req, res, next) => {
+const checkUser = async (req, res, next) => {
   const { id } = req.params;
   if (!id) {
     res.status(400).json({
@@ -37,7 +38,7 @@ const checkUser = async(req, res, next) => {
     if (!user) {
       res.status(404).json({
         message: "user does not exist"
-      })
+      });
     }
     req.user = user;
     next();
@@ -46,7 +47,7 @@ const checkUser = async(req, res, next) => {
       message: "cannot retrieve user info"
     });
   }
-}
+};
 
 // middleware
 server.use(cors());
@@ -58,23 +59,6 @@ server.get("/", (req, res) => {
   res.send("Welcome to Node-Blog API");
 });
 
-// route handler for GET /api/users
-server.get("/api/users", async(req, res) => {
-  try {
-    const users = await userDb.get();
-    res.status(200).json(users);
-  } catch (err) {
-    res.status(500).json({
-      message: "cannot retrieve users"
-    });
-  }
-})
-
-// route handler for GET /api/users/:id
-server.get("/api/users/:id", checkUser, (req, res) => {
-    res.status(200).json(req.user);
-});
-
 // route handler for POST /api/users
 server.post("/api/users", checkUsername, async (req, res) => {
   try {
@@ -83,8 +67,25 @@ server.post("/api/users", checkUsername, async (req, res) => {
   } catch (err) {
     res.status(500).json({
       message: "cannot create new user"
-    })
+    });
   }
+});
+
+// route handler for GET /api/users
+server.get("/api/users", async (req, res) => {
+  try {
+    const users = await userDb.get();
+    res.status(200).json(users);
+  } catch (err) {
+    res.status(500).json({
+      message: "cannot retrieve users"
+    });
+  }
+});
+
+// route handler for GET /api/users/:id
+server.get("/api/users/:id", checkUser, (req, res) => {
+  res.status(200).json(req.user);
 });
 
 // route handler for PUT /api/users/:id
@@ -96,25 +97,41 @@ server.put("/api/users/:id", checkUser, checkUsername, async (req, res) => {
       res.sendStatus(204);
     }
     res.status(500).json({ message: "failed to update user's info" });
-  } catch(err) {
+  } catch (err) {
     res.status(500).json({
       message: "cannot update user's info"
-    })
+    });
   }
-})
+});
+
+// route handler for DELETE /api/users/:id
+server.delete("/api/users/:id", checkUser, async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const count = await userDb.remove(id);
+    if (count === 1) {
+      res.sendStatus(204);
+    }
+    res.status(500).json({ message: "failed to remove user" });
+  } catch (err) {
+    res.status(500).json({
+      message: "cannot remove user"
+    });
+  }
+});
 
 // route handler for GET /api/users/:id/post
-server.get("/api/users/:id/posts", checkUser,
-  async (req, res) => {
-    const { id } = req.params;
-    try {
-      const posts = await userDb.getUserPosts(id);
-      res.status(200).json(posts);
-    } catch(err) {
-      res.status(500).json({
-        message: "cannot retrieve user's posts"
-      })
-    }
+server.get("/api/users/:id/posts", checkUser, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const posts = await userDb.getUserPosts(id);
+    res.status(200).json(posts);
+  } catch (err) {
+    res.status(500).json({
+      message: "cannot retrieve user's posts"
+    });
+  }
 });
 
 module.exports = server;
