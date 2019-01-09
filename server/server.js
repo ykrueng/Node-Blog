@@ -134,4 +134,16 @@ server.get("/api/users/:id/posts", checkUser, async (req, res) => {
   }
 });
 
+// route handler for GET /api/posts
+server.get("/api/posts", async (req, res) => {
+  try {
+    const posts = await postDb.get();
+    res.status(200).json(posts);
+  } catch {
+    res.status(500).json({
+      message: "cannot fetch posts"
+    })
+  }
+})
+
 module.exports = server;
