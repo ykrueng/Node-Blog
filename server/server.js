@@ -9,6 +9,21 @@ const postDb = require("../data/helpers/postDb");
 
 const server = express();
 
+const checkUsername = (req, res, next) => {
+  const { name } = req.body;
+
+  if (!name) {
+    res.status(400).json({
+      message: "please provide a username"
+    })
+  }
+
+  req.name = name.split(' ').map(
+    str => `${str[0].toUpperCase()}${str.slice(1)}`
+  ).join(' ');
+  next();
+}
+
 const checkUser = async(req, res, next) => {
   const { id } = req.params;
   if (!id) {
@@ -59,6 +74,18 @@ server.get("/api/users", async(req, res) => {
 server.get("/api/users/:id", checkUser, (req, res) => {
     res.status(200).json(req.user);
 });
+
+// route handler for POST /api/users
+server.post("/api/users", checkUsername, async (req, res) => {
+  try {
+    const newId = await userDb.insert({name: req.name});
+    res.status(201).json(newId);
+  } catch (err) {
+    res.status(500).json({
+      message: "cannot create new user"
+    })
+  }
+})
 
 // route handler for GET /api/users/:id/post
 server.get("/api/users/:id/posts", checkUser,
