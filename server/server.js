@@ -13,34 +13,34 @@ const server = express();
 server.use(cors());
 server.use(morgan("short"));
 server.use(bodyParser.json());
-server.use(helmet())
+server.use(helmet());
 
 server.get("/", (req, res) => {
   res.send("Welcome to Node-Blog API");
 });
 
-// route to GET /api/users
-server.get('/api/users/:id', async (req, res) => {
+// route handler for GET /api/users
+server.get("/api/users/:id", async (req, res) => {
   const { id } = req.params;
   if (!id) {
     res.status(400).json({
-      message: 'please provide an id'
-    })
+      message: "please provide an id"
+    });
   }
 
   try {
     const user = await userDb.get(id);
-
-    if (user) {
-      res.status(200).json({user})
+    if (!user) {
+      res.status(404).json({
+        message: "user does not exist"
+      })
     }
-
+    res.status(200).json({ user });
   } catch (err) {
     res.status(500).json({
-      message: 'cannot retrieve user info'
-    })
+      message: "cannot retrieve user info"
+    });
   }
-
-})
+});
 
 module.exports = server;
