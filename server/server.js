@@ -25,6 +25,13 @@ const checkUsername = (req, res, next) => {
   next();
 };
 
+const upperCase = (req, res, next) => {
+  const { users } = res;
+  const Uusers = users.map(user => ({...user, name: user.name.toUpperCase()}));
+
+  res.status(200).json(Uusers);
+}
+
 const checkUser = async (req, res, next) => {
   const { id } = req.params;
   if (!id) {
@@ -72,16 +79,17 @@ server.post("/api/users", checkUsername, async (req, res) => {
 });
 
 // route handler for GET /api/users
-server.get("/api/users", async (req, res) => {
+server.get("/api/users", async (req, res, next) => {
   try {
     const users = await userDb.get();
-    res.status(200).json(users);
+    res.users = users;
+    next();
   } catch (err) {
     res.status(500).json({
       message: "cannot retrieve users"
     });
   }
-});
+}, upperCase);
 
 // route handler for GET /api/users/:id
 server.get("/api/users/:id", checkUser, (req, res) => {
@@ -121,7 +129,7 @@ server.delete("/api/users/:id", checkUser, async (req, res) => {
   }
 });
 
-// route handler for GET /api/users/:id/post
+// route handler for GET /api/users/:id/posts
 server.get("/api/users/:id/posts", checkUser, async (req, res) => {
   const { id } = req.params;
   try {
@@ -142,8 +150,8 @@ server.get("/api/posts", async (req, res) => {
   } catch {
     res.status(500).json({
       message: "cannot fetch posts"
-    })
+    });
   }
-})
+});
 
 module.exports = server;
