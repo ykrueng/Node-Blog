@@ -2,6 +2,7 @@ const userDb = require("../../data/helpers/userDb");
 
 module.exports = async (req, res, next) => {
   const { id } = req.params;
+  console.log('id', id)
 
   // check for non numeric and null id
   if (isNaN(id)) {
