@@ -1,73 +1,13 @@
 const express = require("express");
 
 const configMdlware = require("../config/middleware");
+const validateName = require("../helper/middleware/validateName");
+const validateUser = require("../helper/middleware/validateUser");
+
 const userDb = require("../data/helpers/userDb");
 const postDb = require("../data/helpers/postDb");
 
 const server = express();
-
-const checkUsername = async(req, res, next) => {
-  const { name } = req.body;
-
-  if (!name || name.lenght > 30) {
-    res.status(400).json({
-      message: "please provide a username less than 30 chars"
-    });
-  }
-
-  try {
-    users = await userDb.get();
-    const duplicate = users.find(user => user.name.toLowerCase() === name.toLowerCase());
-    
-    if (duplicate) {
-      res.status(400).json({
-        message: "username is taken"
-      })
-    }
-
-    req.name = name
-      .split(" ")
-      .map(str => `${str[0].toUpperCase()}${str.slice(1)}`)
-      .join(" ");
-    next();
-  } catch (err) {
-    res.status(500).json({
-      message: "cannot check the username"
-    })
-  }
-
-};
-
-const upperCase = (req, res, next) => {
-  const { users } = res;
-  const Uusers = users.map(user => ({...user, name: user.name.toUpperCase()}));
-
-  res.status(200).json(Uusers);
-}
-
-const checkUser = async (req, res, next) => {
-  const { id } = req.params;
-  if (!id) {
-    res.status(400).json({
-      message: "please provide an id"
-    });
-  }
-
-  try {
-    const user = await userDb.get(id);
-    if (!user) {
-      res.status(404).json({
-        message: "user does not exist"
-      });
-    }
-    req.user = user;
-    next();
-  } catch (err) {
-    res.status(500).json({
-      message: "cannot retrieve user info"
-    });
-  }
-};
 
 // apply config middleware
 configMdlware(server);
@@ -77,7 +17,7 @@ server.get("/", (req, res) => {
 });
 
 // route handler for POST /api/users
-server.post("/api/users", checkUsername, async (req, res) => {
+server.post("/api/users", validateName, async (req, res) => {
   try {
     const newId = await userDb.insert({ name: req.name });
     res.status(201).json(newId);
@@ -89,25 +29,24 @@ server.post("/api/users", checkUsername, async (req, res) => {
 });
 
 // route handler for GET /api/users
-server.get("/api/users", async (req, res, next) => {
+server.get("/api/users", async (req, res) => {
   try {
     const users = await userDb.get();
-    res.users = users;
-    next();
+    res.status(200).json(users);
   } catch (err) {
     res.status(500).json({
       message: "cannot retrieve users"
     });
   }
-}, upperCase);
+});
 
 // route handler for GET /api/users/:id
-server.get("/api/users/:id", checkUser, (req, res) => {
+server.get("/api/users/:id", validateUser, (req, res) => {
   res.status(200).json(req.user);
 });
 
 // route handler for PUT /api/users/:id
-server.put("/api/users/:id", checkUser, checkUsername, async (req, res) => {
+server.put("/api/users/:id", validateUser, validateName, async (req, res) => {
   const { id } = req.params;
   try {
     const count = await userDb.update(id, { name: req.name });
@@ -123,7 +62,7 @@ server.put("/api/users/:id", checkUser, checkUsername, async (req, res) => {
 });
 
 // route handler for DELETE /api/users/:id
-server.delete("/api/users/:id", checkUser, async (req, res) => {
+server.delete("/api/users/:id", validateUser, async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -140,7 +79,7 @@ server.delete("/api/users/:id", checkUser, async (req, res) => {
 });
 
 // route handler for GET /api/users/:id/posts
-server.get("/api/users/:id/posts", checkUser, async (req, res) => {
+server.get("/api/users/:id/posts", validateUser, async (req, res) => {
   const { id } = req.params;
   try {
     const posts = await userDb.getUserPosts(id);
@@ -188,7 +127,7 @@ server.get("/api/posts/:id", async (req, res) => {
 })
 
 // route handler for POST /api/users/:id/posts
-server.post("/api/users/:id/posts", checkUser, async (req, res) => {
+server.post("/api/users/:id/posts", validateUser, async (req, res) => {
   const { text } = req.body;
   const { id } = req.params;
 
